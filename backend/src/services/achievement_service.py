@@ -238,6 +238,7 @@ async def run_achievement_pipeline(
         achievement.solutions_json = parsed.get("solutions", [])
         achievement.metrics_json = parsed.get("metrics", [])
         achievement.interview_points_json = parsed.get("interview_points", [])
+        achievement.tags_json = parsed.get("tags", [])
         achievement.importance_score = float(parsed.get("importance_score", 0.0))
 
     # 4b. Create role matches

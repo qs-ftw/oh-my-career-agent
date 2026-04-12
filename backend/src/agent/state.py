@@ -44,6 +44,8 @@ class CareerAgentState(TypedDict, total=False):
     jd_parsed: Optional[dict[str, Any]]
     jd_mode: Optional[str]  # "generate_new" | "tune_existing"
     base_resume_id: Optional[str]
+    career_assets: Optional[dict[str, Any]]  # Pre-loaded achievements, roles, skills
+    base_resume_content: Optional[dict[str, Any]]  # Base resume for tune mode
 
     # ------------------------------------------------------------------
     # Shared outputs (written by agent nodes)

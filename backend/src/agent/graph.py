@@ -15,6 +15,8 @@ from src.agent.nodes.resume_init import resume_init
 from src.agent.nodes.gap_evaluation import gap_evaluation
 from src.agent.nodes.role_matching import role_matching
 from src.agent.nodes.resume_update import resume_update
+from src.agent.nodes.jd_parsing import jd_parsing
+from src.agent.nodes.jd_tailoring import jd_tailoring
 from src.agent.nodes.explain import explain
 
 
@@ -77,12 +79,22 @@ def build_jd_tailoring_pipeline() -> StateGraph:
     """Build the JD-tailoring pipeline.
 
     Flow:
-        jd_raw -> JD Parsing -> (mode branch) JD Tailoring -> Match Scoring -> Explain
+        jd_raw -> JD Parsing -> JD Tailoring -> Explain -> END
+
+    JD Tailoring handles both generate_new and tune_existing modes internally.
+    Match scoring is done within jd_tailoring alongside resume generation.
     """
     graph = StateGraph(CareerAgentState)
-    graph.add_node("__noop__", lambda state: state)
-    graph.set_entry_point("__noop__")
-    graph.add_edge("__noop__", END)
+
+    graph.add_node("jd_parsing", jd_parsing)
+    graph.add_node("jd_tailoring", jd_tailoring)
+    graph.add_node("explain", explain)
+
+    graph.set_entry_point("jd_parsing")
+    graph.add_edge("jd_parsing", "jd_tailoring")
+    graph.add_edge("jd_tailoring", "explain")
+    graph.add_edge("explain", END)
+
     return graph
 
 
