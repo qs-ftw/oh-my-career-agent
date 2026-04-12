@@ -1,11 +1,15 @@
-"""Suggestion endpoints — stubs returning mock data."""
+"""Suggestion endpoints — database-backed list, accept, reject."""
 
 from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.database import get_db
+from src.core.security import get_current_user_id
 from src.schemas.suggestion import SuggestionActionRequest, SuggestionResponse
 from src.services import suggestion_service
 
@@ -27,9 +31,12 @@ async def list_suggestions(
     target_role_id: uuid.UUID | None = Query(
         default=None, description="Filter by target role"
     ),
+    db: AsyncSession = Depends(get_db),
 ) -> list[SuggestionResponse]:
     """Return all suggestions, optionally filtered by type, status, or role."""
+    user_id = await get_current_user_id()
     return await suggestion_service.list_suggestions(
+        db, user_id,
         suggestion_type=suggestion_type,
         status=status_filter,
         target_role_id=target_role_id,
@@ -44,10 +51,12 @@ async def list_suggestions(
 async def accept_suggestion(
     suggestion_id: uuid.UUID = Path(..., description="The suggestion UUID"),
     body: SuggestionActionRequest | None = None,
+    db: AsyncSession = Depends(get_db),
 ) -> SuggestionResponse:
     """Mark a suggestion as accepted and apply the change."""
+    user_id = await get_current_user_id()
     notes = body.notes if body else None
-    result = await suggestion_service.accept_suggestion(suggestion_id, notes=notes)
+    result = await suggestion_service.accept_suggestion(db, user_id, suggestion_id, notes=notes)
     if result is None:
         raise HTTPException(status_code=404, detail="Suggestion not found")
     return result
@@ -61,10 +70,12 @@ async def accept_suggestion(
 async def reject_suggestion(
     suggestion_id: uuid.UUID = Path(..., description="The suggestion UUID"),
     body: SuggestionActionRequest | None = None,
+    db: AsyncSession = Depends(get_db),
 ) -> SuggestionResponse:
     """Mark a suggestion as rejected."""
+    user_id = await get_current_user_id()
     notes = body.notes if body else None
-    result = await suggestion_service.reject_suggestion(suggestion_id, notes=notes)
+    result = await suggestion_service.reject_suggestion(db, user_id, suggestion_id, notes=notes)
     if result is None:
         raise HTTPException(status_code=404, detail="Suggestion not found")
     return result

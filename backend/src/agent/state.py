@@ -26,8 +26,10 @@ class CareerAgentState(TypedDict, total=False):
     # ------------------------------------------------------------------
     # Achievement pipeline
     # ------------------------------------------------------------------
+    achievement_id: Optional[str]
     achievement_raw: Optional[str]
     achievement_parsed: Optional[dict[str, Any]]
+    target_roles: Optional[list[dict[str, Any]]]
 
     # ------------------------------------------------------------------
     # Role initialization pipeline

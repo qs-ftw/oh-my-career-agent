@@ -9,9 +9,13 @@ from __future__ import annotations
 from langgraph.graph import END, StateGraph
 
 from src.agent.state import CareerAgentState
+from src.agent.nodes.achievement_analysis import achievement_analysis
 from src.agent.nodes.capability_modeling import capability_modeling
 from src.agent.nodes.resume_init import resume_init
 from src.agent.nodes.gap_evaluation import gap_evaluation
+from src.agent.nodes.role_matching import role_matching
+from src.agent.nodes.resume_update import resume_update
+from src.agent.nodes.explain import explain
 
 
 def build_achievement_pipeline() -> StateGraph:
@@ -19,14 +23,26 @@ def build_achievement_pipeline() -> StateGraph:
 
     Flow:
         achievement_raw -> Achievement Analysis -> Role Matching
-          -> (parallel per role) Resume Update + Gap Evaluation
-          -> Explain
+          -> Resume Update -> Gap Evaluation -> Explain
+
+    Each of resume_update and gap_evaluation iterates over all matched
+    roles internally, producing suggestions/gap_updates per role.
     """
     graph = StateGraph(CareerAgentState)
-    # Placeholder: add a no-op node so the graph compiles
-    graph.add_node("__noop__", lambda state: state)
-    graph.set_entry_point("__noop__")
-    graph.add_edge("__noop__", END)
+
+    graph.add_node("achievement_analysis", achievement_analysis)
+    graph.add_node("role_matching", role_matching)
+    graph.add_node("resume_update", resume_update)
+    graph.add_node("gap_evaluation", gap_evaluation)
+    graph.add_node("explain", explain)
+
+    graph.set_entry_point("achievement_analysis")
+    graph.add_edge("achievement_analysis", "role_matching")
+    graph.add_edge("role_matching", "resume_update")
+    graph.add_edge("resume_update", "gap_evaluation")
+    graph.add_edge("gap_evaluation", "explain")
+    graph.add_edge("explain", END)
+
     return graph
 
 
