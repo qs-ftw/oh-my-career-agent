@@ -12,12 +12,12 @@ class ResumeContent(BaseModel):
     so the schema can evolve without requiring migrations for every change."""
 
     summary: str = ""
-    skills: list[dict[str, Any]] = Field(default_factory=list)
+    skills: list[Any] = Field(default_factory=list)
     experiences: list[dict[str, Any]] = Field(default_factory=list)
     projects: list[dict[str, Any]] = Field(default_factory=list)
-    highlights: list[dict[str, Any]] = Field(default_factory=list)
+    highlights: list[Any] = Field(default_factory=list)
     metrics: list[dict[str, Any]] = Field(default_factory=list)
-    interview_points: list[dict[str, Any]] = Field(default_factory=list)
+    interview_points: list[Any] = Field(default_factory=list)
 
 
 class ResumeResponse(BaseModel):

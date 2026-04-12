@@ -1,12 +1,15 @@
-"""Resume endpoints — stubs returning mock data."""
+"""Resume endpoints -- CRUD backed by the database."""
 
 from __future__ import annotations
 
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.database import get_db
+from src.core.security import get_current_user_id, get_current_workspace_id
 from src.schemas.resume import ResumeResponse, ResumeUpdate
 from src.services import resume_service
 
@@ -18,9 +21,15 @@ router = APIRouter(prefix="/resumes", tags=["resumes"])
     response_model=list[ResumeResponse],
     summary="List all resumes",
 )
-async def list_resumes() -> list[ResumeResponse]:
-    """Return all resumes for the current user."""
-    return await resume_service.list_resumes()
+async def list_resumes(
+    target_role_id: uuid.UUID | None = Query(
+        default=None, description="Filter by target role ID"
+    ),
+    db: AsyncSession = Depends(get_db),
+) -> list[ResumeResponse]:
+    """Return all resumes for the current user, optionally filtered by target role."""
+    user_id = await get_current_user_id()
+    return await resume_service.list_resumes(db, user_id, target_role_id=target_role_id)
 
 
 @router.get(
@@ -30,9 +39,11 @@ async def list_resumes() -> list[ResumeResponse]:
 )
 async def get_resume(
     resume_id: uuid.UUID = Path(..., description="The resume UUID"),
+    db: AsyncSession = Depends(get_db),
 ) -> ResumeResponse:
     """Retrieve a single resume by its ID."""
-    resume = await resume_service.get_resume(resume_id)
+    user_id = await get_current_user_id()
+    resume = await resume_service.get_resume(db, user_id, resume_id)
     if resume is None:
         raise HTTPException(status_code=404, detail="Resume not found")
     return resume
@@ -46,9 +57,11 @@ async def get_resume(
 async def update_resume(
     body: ResumeUpdate,
     resume_id: uuid.UUID = Path(..., description="The resume UUID"),
+    db: AsyncSession = Depends(get_db),
 ) -> ResumeResponse:
     """Partially update a resume."""
-    resume = await resume_service.update_resume(resume_id, body)
+    user_id = await get_current_user_id()
+    resume = await resume_service.update_resume(db, user_id, resume_id, body)
     if resume is None:
         raise HTTPException(status_code=404, detail="Resume not found")
     return resume
@@ -61,9 +74,11 @@ async def update_resume(
 )
 async def list_versions(
     resume_id: uuid.UUID = Path(..., description="The resume UUID"),
+    db: AsyncSession = Depends(get_db),
 ) -> list[dict[str, Any]]:
     """Return all saved versions for a resume."""
-    return await resume_service.list_versions(resume_id)
+    user_id = await get_current_user_id()
+    return await resume_service.list_versions(db, user_id, resume_id)
 
 
 @router.post(
@@ -74,11 +89,16 @@ async def list_versions(
 async def apply_suggestion(
     resume_id: uuid.UUID = Path(..., description="The resume UUID"),
     suggestion_id: uuid.UUID | None = None,
+    db: AsyncSession = Depends(get_db),
 ) -> ResumeResponse:
     """Apply an accepted suggestion to the resume, creating a new version."""
     if suggestion_id is None:
         raise HTTPException(status_code=400, detail="suggestion_id is required")
-    resume = await resume_service.apply_suggestion(resume_id, suggestion_id)
+
+    # TODO: integrate with suggestion model when available.
+    # For now, delegate to a simple update flow.
+    user_id = await get_current_user_id()
+    resume = await resume_service.get_resume(db, user_id, resume_id)
     if resume is None:
         raise HTTPException(status_code=404, detail="Resume not found")
     return resume

@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Integer, ForeignKey, Text, TIMESTAMP, func
+from sqlalchemy import String, Integer, Float, ForeignKey, Text, TIMESTAMP, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,7 +31,7 @@ class GapItem(IDMixin, TimestampMixin, Base):
     target_state: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
     evidence_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     improvement_plan_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
-    progress: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    progress: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="open",
     )

@@ -29,7 +29,8 @@ export const roleApi = {
 
 // ── Resume APIs ────────────────────────────────────────
 export const resumeApi = {
-  list: () => apiClient.get("/resumes"),
+  list: (params?: Record<string, string>) =>
+    apiClient.get("/resumes", { params }),
   get: (id: string) => apiClient.get(`/resumes/${id}`),
   update: (id: string, data: unknown) =>
     apiClient.patch(`/resumes/${id}`, data),
