@@ -94,3 +94,9 @@ export const storyApi = {
   update: (id: string, data: unknown) =>
     apiClient.patch(`/stories/${id}`, data),
 };
+
+// ── Dashboard APIs ─────────────────────────────────────
+export const dashboardApi = {
+  stats: () => apiClient.get("/dashboard/stats"),
+  recentJdDecisions: () => apiClient.get("/dashboard/recent-jd-decisions"),
+};

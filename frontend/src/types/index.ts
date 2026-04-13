@@ -223,3 +223,22 @@ export interface InterviewStory {
   created_at: string;
   updated_at: string;
 }
+
+// ── Dashboard ──────────────────────────────────────────
+
+export interface DashboardStats {
+  role_count: number;
+  resume_count: number;
+  high_priority_gap_count: number;
+  recent_achievement_count: number;
+  pending_suggestion_count: number;
+  story_count: number;
+}
+
+export interface JDRecentDecision {
+  task_id: string;
+  recommendation: string;
+  ability_match_score: number;
+  resume_match_score: number;
+  created_at: string;
+}
