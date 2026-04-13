@@ -6,6 +6,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
@@ -117,3 +118,35 @@ async def delete_version(
     """Delete a specific resume version. Cannot delete the current (latest) version."""
     user_id = await get_current_user_id()
     await resume_service.delete_version(db, user_id, resume_id, version_id)
+
+
+@router.post(
+    "/{resume_id}/export-pdf",
+    summary="Export resume as PDF",
+)
+async def export_resume_pdf(
+    resume_id: uuid.UUID = Path(..., description="The resume UUID"),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Export a resume as an ATS-friendly PDF."""
+    user_id = await get_current_user_id()
+    resume = await resume_service.get_resume(db, user_id, resume_id)
+    if resume is None:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    from src.services.pdf_export_service import render_resume_pdf
+
+    content = resume.content.model_dump() if hasattr(resume.content, "model_dump") else {}
+    headline = resume.resume_name or "Resume"
+
+    try:
+        pdf_bytes = await render_resume_pdf(content, headline=headline)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+    filename = f"{headline.replace(' ', '_')}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

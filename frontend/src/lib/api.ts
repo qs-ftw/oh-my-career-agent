@@ -40,6 +40,8 @@ export const resumeApi = {
     apiClient.delete(`/resumes/${resumeId}/versions/${versionId}`),
   applySuggestion: (id: string, suggestionId: string) =>
     apiClient.post(`/resumes/${id}/apply-suggestion`, { suggestion_id: suggestionId }),
+  exportPdf: (id: string) =>
+    apiClient.post(`/resumes/${id}/export-pdf`, null, { responseType: "blob" }),
 };
 
 // ── Achievement APIs ───────────────────────────────────
@@ -64,6 +66,8 @@ export const jdApi = {
   parse: (data: { raw_jd: string }) => apiClient.post("/jd/parse", data),
   tailor: (data: unknown) => apiClient.post("/jd/tailor", data),
   getTask: (taskId: string) => apiClient.get(`/jd/tasks/${taskId}`),
+  exportPdf: (taskId: string) =>
+    apiClient.post(`/jd/tasks/${taskId}/export-pdf`, null, { responseType: "blob" }),
 };
 
 // ── Suggestion APIs ────────────────────────────────────
