@@ -286,6 +286,8 @@ async def update_role(
         role.priority = update_map["priority"]
     if "source_jd" in update_map:
         role.source_jd_summary = update_map["source_jd"]
+    if "status" in update_map:
+        role.status = update_map["status"]
 
     role.updated_at = datetime.now(UTC)
 

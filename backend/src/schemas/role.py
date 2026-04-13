@@ -32,6 +32,7 @@ class RoleUpdate(BaseModel):
     bonus_skills: list[str] | None = Field(default=None)
     priority: int | None = Field(default=None, ge=0, le=10)
     source_jd: str | None = Field(default=None)
+    status: str | None = Field(default=None, pattern="^(active|paused)$")
 
 
 class RoleResponse(BaseModel):
