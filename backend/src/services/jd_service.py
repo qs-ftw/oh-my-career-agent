@@ -132,6 +132,10 @@ async def tailor_jd(
         "roles": roles,
     }
 
+    # Load candidate profile context
+    from src.services.profile_service import get_profile_context
+    profile_ctx = await get_profile_context(session, user_id, workspace_id)
+
     # Load base resume content if tuning
     base_resume_content = None
     if mode == "tune_existing" and base_resume_id:
@@ -153,6 +157,7 @@ async def tailor_jd(
     agent_input = {
         "user_id": str(user_id),
         "workspace_id": str(workspace_id),
+        "candidate_profile": profile_ctx or None,
         "jd_raw": raw_jd,
         "jd_mode": mode,
         "base_resume_id": str(base_resume_id) if base_resume_id else None,

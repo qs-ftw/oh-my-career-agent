@@ -5,6 +5,40 @@ export interface PaginatedResponse<T> {
   total: number;
 }
 
+// ── Profile ────────────────────────────────────────────
+
+export interface CandidateProfile {
+  id: string;
+  headline: string;
+  exit_story: string;
+  superpowers: string[];
+  proof_points: Record<string, unknown>[];
+  compensation: Record<string, unknown>;
+  location: Record<string, unknown>;
+  preferences: Record<string, unknown>;
+  constraints: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProfileUpsertRequest {
+  headline?: string;
+  exit_story?: string;
+  superpowers?: string[];
+  proof_points?: Record<string, unknown>[];
+  compensation?: Record<string, unknown>;
+  location?: Record<string, unknown>;
+  preferences?: Record<string, unknown>;
+  constraints?: Record<string, unknown>;
+}
+
+export interface ProfileCompleteness {
+  total_fields: number;
+  filled_fields: number;
+  completeness_pct: number;
+  missing_high_value: string[];
+}
+
 // ── Role ───────────────────────────────────────────────
 
 export interface TargetRole {

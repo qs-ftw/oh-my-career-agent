@@ -117,10 +117,15 @@ async def initialize_role_assets(
 
     career_assets = {"achievements": achievements}
 
+    # Load candidate profile context
+    from src.services.profile_service import get_profile_context
+    profile_ctx = await get_profile_context(session, user_id, workspace_id)
+
     # Build agent state from role input
     agent_input = {
         "user_id": str(user_id),
         "workspace_id": str(workspace_id),
+        "candidate_profile": profile_ctx or None,
         "target_role_input": {
             "role_name": data.role_name,
             "role_type": data.role_type,

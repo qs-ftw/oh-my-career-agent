@@ -10,6 +10,7 @@ import { GapBoard } from "@/pages/GapBoard";
 import { JDTailor } from "@/pages/JDTailor";
 import { Resumes } from "@/pages/Resumes";
 import { Suggestions } from "@/pages/Suggestions";
+import { Profile } from "@/pages/Profile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,7 @@ export default function App() {
               <Route path="/gaps" element={<GapBoard />} />
               <Route path="/jd-tailor" element={<JDTailor />} />
               <Route path="/suggestions" element={<Suggestions />} />
+              <Route path="/profile" element={<Profile />} />
             </Routes>
           </div>
         </div>

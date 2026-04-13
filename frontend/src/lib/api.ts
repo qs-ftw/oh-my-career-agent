@@ -73,3 +73,10 @@ export const suggestionApi = {
   accept: (id: string) => apiClient.post(`/suggestions/${id}/accept`),
   reject: (id: string) => apiClient.post(`/suggestions/${id}/reject`),
 };
+
+// ── Profile APIs ───────────────────────────────────────
+export const profileApi = {
+  get: () => apiClient.get("/profile"),
+  upsert: (data: unknown) => apiClient.put("/profile", data),
+  completeness: () => apiClient.get("/profile/completeness"),
+};

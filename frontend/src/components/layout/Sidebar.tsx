@@ -7,6 +7,7 @@ import {
   BarChart3,
   FileSearch,
   Bell,
+  UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,7 @@ const navItems = [
   { to: "/gaps", label: "Gap 看板", icon: BarChart3 },
   { to: "/jd-tailor", label: "JD 定制", icon: FileSearch },
   { to: "/suggestions", label: "更新建议", icon: Bell },
+  { to: "/profile", label: "候选人画像", icon: UserCircle },
 ];
 
 export function Sidebar() {

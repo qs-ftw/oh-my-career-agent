@@ -8,6 +8,7 @@ from src.models.achievement import Achievement, AchievementResumeLink, Achieveme
 from src.models.agent import AgentRun, UpdateSuggestion
 from src.models.gap import GapItem
 from src.models.jd import JDResumeTask, JDSnapshot
+from src.models.profile import CandidateProfile
 from src.models.resume import Resume, ResumeVersion
 from src.models.skill import SkillEntity
 from src.models.target_role import RoleCapabilityModel, TargetRole
@@ -31,4 +32,5 @@ __all__ = [
     "JDResumeTask",
     "AgentRun",
     "UpdateSuggestion",
+    "CandidateProfile",
 ]

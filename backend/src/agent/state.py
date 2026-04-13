@@ -22,6 +22,7 @@ class CareerAgentState(TypedDict, total=False):
     # ------------------------------------------------------------------
     user_id: str
     workspace_id: str
+    candidate_profile: dict[str, Any] | None  # Canonical profile context
 
     # ------------------------------------------------------------------
     # Achievement pipeline
