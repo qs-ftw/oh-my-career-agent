@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from src.api import achievements, gaps, jd, profile, resumes, roles, suggestions
+from src.api import achievements, gaps, jd, profile, resumes, roles, stories, suggestions
 
 api_router = APIRouter()
 
@@ -13,6 +13,7 @@ api_router.include_router(gaps.router)
 api_router.include_router(jd.router)
 api_router.include_router(suggestions.router)
 api_router.include_router(profile.router)
+api_router.include_router(stories.router)
 
 
 @api_router.get("/health", tags=["health"])

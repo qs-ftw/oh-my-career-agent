@@ -80,3 +80,13 @@ export const profileApi = {
   upsert: (data: unknown) => apiClient.put("/profile", data),
   completeness: () => apiClient.get("/profile/completeness"),
 };
+
+// ── Story APIs ─────────────────────────────────────────
+export const storyApi = {
+  list: (params?: Record<string, string>) =>
+    apiClient.get("/stories", { params }),
+  rebuild: (achievementId: string) =>
+    apiClient.post(`/stories/rebuild/${achievementId}`),
+  update: (id: string, data: unknown) =>
+    apiClient.patch(`/stories/${id}`, data),
+};

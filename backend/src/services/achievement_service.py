@@ -13,6 +13,7 @@ from src.models.achievement import Achievement, AchievementRoleMatch
 from src.models.agent import AgentRun, UpdateSuggestion
 from src.models.gap import GapItem
 from src.models.resume import Resume, ResumeVersion
+from src.models.story import InterviewStory
 from src.models.target_role import RoleCapabilityModel, TargetRole
 from src.schemas.achievement import AchievementCreate, AchievementResponse
 
@@ -340,7 +341,23 @@ async def run_achievement_pipeline(
                 )
                 session.add(gap)
 
-    # 4e. Create agent run audit record
+    # 4e. Extract and persist interview stories
+    story_candidates = pipeline_result.get("story_candidates", [])
+    for candidate in story_candidates:
+        story = InterviewStory(
+            workspace_id=workspace_id,
+            user_id=user_id,
+            title=candidate.get("title", achievement.title),
+            theme=candidate.get("theme", "general"),
+            source_type="achievement",
+            source_ref_id=achievement_id,
+            story_json=candidate.get("story_json", {}),
+            best_for_json=candidate.get("best_for", []),
+            confidence_score=candidate.get("confidence_score", 0.0),
+        )
+        session.add(story)
+
+    # 4f. Create agent run audit record
     agent_run = AgentRun(
         workspace_id=workspace_id,
         user_id=user_id,

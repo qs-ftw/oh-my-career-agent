@@ -49,6 +49,11 @@ class CareerAgentState(TypedDict, total=False):
     base_resume_content: dict[str, Any] | None  # Base resume for tune mode
 
     # ------------------------------------------------------------------
+    # Story extraction
+    # ------------------------------------------------------------------
+    story_candidates: list[dict[str, Any]] | None
+
+    # ------------------------------------------------------------------
     # Shared outputs (written by agent nodes)
     # ------------------------------------------------------------------
     role_matches: list[dict[str, Any]] | None

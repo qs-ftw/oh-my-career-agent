@@ -10,6 +10,7 @@ from src.models.gap import GapItem
 from src.models.jd import JDResumeTask, JDSnapshot
 from src.models.profile import CandidateProfile
 from src.models.resume import Resume, ResumeVersion
+from src.models.story import InterviewStory
 from src.models.skill import SkillEntity
 from src.models.target_role import RoleCapabilityModel, TargetRole
 from src.models.user import User
@@ -33,4 +34,5 @@ __all__ = [
     "AgentRun",
     "UpdateSuggestion",
     "CandidateProfile",
+    "InterviewStory",
 ]

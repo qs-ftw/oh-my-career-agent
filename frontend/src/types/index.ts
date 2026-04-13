@@ -196,3 +196,18 @@ export interface UpdateSuggestion {
   created_at: string;
   updated_at: string;
 }
+
+// ── Story ──────────────────────────────────────────────
+
+export interface InterviewStory {
+  id: string;
+  title: string;
+  theme: string;
+  source_type: string;
+  source_ref_id?: string;
+  story_json: Record<string, unknown>;
+  best_for_json: string[];
+  confidence_score: number;
+  created_at: string;
+  updated_at: string;
+}
