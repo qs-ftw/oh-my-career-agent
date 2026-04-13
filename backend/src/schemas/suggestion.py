@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -18,6 +20,8 @@ class SuggestionResponse(BaseModel):
     impact_score: float = 0.0
     risk_level: str = "low"
     status: str = "pending"
+    applied_resume_version_id: UUID | None = None
+    apply_result: dict[str, Any] | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

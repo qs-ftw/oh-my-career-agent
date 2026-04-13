@@ -69,3 +69,8 @@ class UpdateSuggestion(IDMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="pending",
     )
+    applied_resume_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("resume_versions.id"), nullable=True, default=None,
+    )
+    review_notes: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
+    apply_result_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)

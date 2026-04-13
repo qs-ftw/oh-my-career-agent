@@ -203,6 +203,8 @@ export interface UpdateSuggestion {
   impact_score: Record<string, unknown>;
   risk_level: "low" | "medium" | "high";
   status: "pending" | "accepted" | "rejected" | "applied";
+  applied_resume_version_id?: string;
+  apply_result?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
