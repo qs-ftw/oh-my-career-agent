@@ -163,6 +163,7 @@ async def tailor_jd(
         "base_resume_id": str(base_resume_id) if base_resume_id else None,
         "career_assets": career_assets,
         "base_resume_content": base_resume_content,
+        "skip_review": True,  # Skip review node for faster MVP response
         "jd_parsed": None,
         "resume_draft": None,
         "match_scores": None,

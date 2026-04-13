@@ -44,6 +44,7 @@ class CareerAgentState(TypedDict, total=False):
     jd_raw: str | None
     jd_parsed: dict[str, Any] | None
     jd_review_artifact: dict[str, Any] | None
+    skip_review: bool  # Skip jd_review node for faster response
     jd_mode: str | None  # "generate_new" | "tune_existing"
     base_resume_id: str | None
     career_assets: dict[str, Any] | None  # Pre-loaded achievements, roles, skills

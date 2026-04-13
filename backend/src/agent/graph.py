@@ -79,7 +79,10 @@ def build_role_init_pipeline() -> StateGraph:
 def build_jd_tailoring_pipeline() -> StateGraph:
     """Build the JD-tailoring pipeline.
 
-    Flow:
+    Flow (default, skip_review=False):
+        jd_raw -> JD Parsing -> JD Review -> JD Tailoring -> Explain -> END
+
+    Flow (skip_review=True):
         jd_raw -> JD Parsing -> JD Tailoring -> Explain -> END
 
     JD Tailoring handles both generate_new and tune_existing modes internally.
@@ -93,7 +96,14 @@ def build_jd_tailoring_pipeline() -> StateGraph:
     graph.add_node("explain", explain)
 
     graph.set_entry_point("jd_parsing")
-    graph.add_edge("jd_parsing", "jd_review")
+
+    def should_review(state: dict) -> str:
+        """Skip review node if flag is set."""
+        if state.get("skip_review"):
+            return "jd_tailoring"
+        return "jd_review"
+
+    graph.add_conditional_edges("jd_parsing", should_review)
     graph.add_edge("jd_review", "jd_tailoring")
     graph.add_edge("jd_tailoring", "explain")
     graph.add_edge("explain", END)
