@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useJDParse, useJDTailor } from "@/hooks/useJD";
-import type { JDParsed, JDTailorResult } from "@/types";
+import type { JDParsed, JDTailorResult, JDReviewArtifact } from "@/types";
 
 const STEPS = [
   { num: 1, label: "输入 JD" },
@@ -17,6 +17,90 @@ const RECOMMENDATION_MAP: Record<string, { label: string; color: string }> = {
   fill_gap_first: { label: "补齐差距后投递", color: "bg-yellow-100 text-yellow-800 border-yellow-200" },
   not_recommended: { label: "暂不建议投递", color: "bg-red-100 text-red-800 border-red-200" },
 };
+
+function ReviewReport({ artifact }: { artifact: JDReviewArtifact }) {
+  const rec = artifact.recommendation_summary || {};
+  return (
+    <div className="rounded-lg border bg-card p-6 space-y-4">
+      <h3 className="font-semibold">JD 评审报告</h3>
+
+      {/* Role Summary */}
+      {artifact.role_summary && (
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">岗位概况</p>
+          <p className="mt-1 text-sm">
+            {(artifact.role_summary as Record<string, unknown>).title && String((artifact.role_summary as Record<string, unknown>).title)}
+            {(artifact.role_summary as Record<string, unknown>).level && ` · ${(artifact.role_summary as Record<string, unknown>).level as string}级`}
+          </p>
+          {(artifact.role_summary as Record<string, unknown>).core_responsibilities && (
+            <ul className="mt-1 space-y-0.5 text-sm text-muted-foreground">
+              {((artifact.role_summary as Record<string, unknown>).core_responsibilities as string[] || []).map((r, i) => (
+                <li key={i}>• {r}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {/* Gap Analysis */}
+      {artifact.gap_analysis && (artifact.gap_analysis as Record<string, unknown>[]).length > 0 && (
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">差距分析</p>
+          <div className="mt-1 space-y-2">
+            {(artifact.gap_analysis as Record<string, unknown>[]).map((g, i) => (
+              <div key={i} className="flex items-start gap-2 text-sm">
+                <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${
+                  g.severity === "blocker" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
+                }`}>
+                  {String(g.severity === "blocker" ? "关键" : "加分")}
+                </span>
+                <div>
+                  <span>{String(g.gap || "")}</span>
+                  {g.suggested_action && <span className="text-muted-foreground"> — {String(g.suggested_action)}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Key Strengths & Concerns */}
+      <div className="grid grid-cols-2 gap-4">
+        {rec.key_strengths && (rec.key_strengths as string[]).length > 0 && (
+          <div>
+            <p className="text-sm font-medium text-green-700">核心优势</p>
+            <ul className="mt-1 space-y-0.5 text-sm">
+              {(rec.key_strengths as string[]).map((s, i) => <li key={i}>• {s}</li>)}
+            </ul>
+          </div>
+        )}
+        {rec.key_concerns && (rec.key_concerns as string[]).length > 0 && (
+          <div>
+            <p className="text-sm font-medium text-red-700">主要顾虑</p>
+            <ul className="mt-1 space-y-0.5 text-sm">
+              {(rec.key_concerns as string[]).map((c, i) => <li key={i}>• {c}</li>)}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Interview Plan */}
+      {artifact.interview_plan && (artifact.interview_plan as Record<string, unknown>[]).length > 0 && (
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">面试准备</p>
+          <div className="mt-1 space-y-1">
+            {(artifact.interview_plan as Record<string, unknown>[]).map((item, i) => (
+              <div key={i} className="text-sm">
+                <span className="font-medium">{String(item.topic || "")}</span>
+                {item.preparation_notes && <span className="text-muted-foreground"> — {String(item.preparation_notes)}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function JDTailor() {
   const [step, setStep] = useState(1);
@@ -286,6 +370,11 @@ export function JDTailor() {
                     投递建议：{RECOMMENDATION_MAP[tailorResult.recommendation]?.label || tailorResult.recommendation}
                   </p>
                 </div>
+              )}
+
+              {/* Review Report */}
+              {tailorResult.review_artifact && (
+                <ReviewReport artifact={tailorResult.review_artifact} />
               )}
 
               {/* Resume Preview */}

@@ -36,6 +36,7 @@ class JDTailorResponse(BaseModel):
     """Full JD tailoring result including a generated/resumed resume and scores."""
 
     resume: ResumeContent = Field(default_factory=ResumeContent)
+    review_artifact: dict[str, Any] | None = None
     ability_match_score: float = 0.0
     resume_match_score: float = 0.0
     readiness_score: float = 0.0

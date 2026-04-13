@@ -58,6 +58,10 @@ class JDResumeTask(CommonBase):
     )
     missing_items_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     optimization_notes_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    review_report_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    evidence_matrix_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    interview_plan_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    decision_summary: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="pending",
     )

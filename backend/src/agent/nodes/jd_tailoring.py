@@ -69,6 +69,7 @@ async def jd_tailoring(state: CareerAgentState) -> dict:
     jd_mode = state.get("jd_mode", "generate_new")
     career_assets = state.get("career_assets") or {}
     base_resume_content = state.get("base_resume_content") or {}
+    review_artifact = state.get("jd_review_artifact")
 
     role_name = jd_parsed.get("role_name", "Unknown Role")
     required_skills = jd_parsed.get("required_skills", [])
@@ -92,6 +93,13 @@ async def jd_tailoring(state: CareerAgentState) -> dict:
         user_parts.append(
             f"\nCurrent Resume:\n"
             f"{json.dumps(base_resume_content, ensure_ascii=False, indent=2)}"
+        )
+
+    # Include review artifact for context-aware tailoring
+    if review_artifact:
+        user_parts.append(
+            f"\nJD Review (use this to inform what to emphasize and gaps to address):\n"
+            f"{json.dumps(review_artifact, ensure_ascii=False, indent=2)}"
         )
 
     user_prompt = "\n".join(user_parts)

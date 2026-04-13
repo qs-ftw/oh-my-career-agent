@@ -13,6 +13,7 @@ from src.agent.nodes.capability_modeling import capability_modeling
 from src.agent.nodes.explain import explain
 from src.agent.nodes.gap_evaluation import gap_evaluation
 from src.agent.nodes.jd_parsing import jd_parsing
+from src.agent.nodes.jd_review import jd_review
 from src.agent.nodes.jd_tailoring import jd_tailoring
 from src.agent.nodes.resume_init import resume_init
 from src.agent.nodes.resume_update import resume_update
@@ -87,11 +88,13 @@ def build_jd_tailoring_pipeline() -> StateGraph:
     graph = StateGraph(CareerAgentState)
 
     graph.add_node("jd_parsing", jd_parsing)
+    graph.add_node("jd_review", jd_review)
     graph.add_node("jd_tailoring", jd_tailoring)
     graph.add_node("explain", explain)
 
     graph.set_entry_point("jd_parsing")
-    graph.add_edge("jd_parsing", "jd_tailoring")
+    graph.add_edge("jd_parsing", "jd_review")
+    graph.add_edge("jd_review", "jd_tailoring")
     graph.add_edge("jd_tailoring", "explain")
     graph.add_edge("explain", END)
 

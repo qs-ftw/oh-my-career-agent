@@ -169,6 +169,7 @@ export interface JDParsed {
 
 export interface JDTailorResult {
   resume: ResumeContent;
+  review_artifact?: JDReviewArtifact;
   ability_match_score: number;
   resume_match_score: number;
   readiness_score: number;
@@ -179,6 +180,15 @@ export interface JDTailorResult {
     | "not_recommended";
   missing_items: string[];
   optimization_notes: string[];
+}
+
+export interface JDReviewArtifact {
+  role_summary: Record<string, unknown>;
+  evidence_matrix: Record<string, unknown>[];
+  gap_analysis: Record<string, unknown>[];
+  personalization_plan: Record<string, unknown>[];
+  interview_plan: Record<string, unknown>[];
+  recommendation_summary: Record<string, unknown>;
 }
 
 // ── Suggestion ─────────────────────────────────────────

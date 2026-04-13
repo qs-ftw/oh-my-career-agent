@@ -197,6 +197,7 @@ async def tailor_jd(
     # 5. Persist results
     match_scores = pipeline_result.get("match_scores") or {}
     resume_draft = pipeline_result.get("resume_draft") or {}
+    review_artifact = pipeline_result.get("jd_review_artifact")
 
     task.ability_match_score = match_scores.get("ability_match_score", 0.0)
     task.resume_match_score = match_scores.get("resume_match_score", 0.0)
@@ -205,6 +206,14 @@ async def tailor_jd(
     task.missing_items_json = match_scores.get("missing_items", [])
     task.optimization_notes_json = match_scores.get("optimization_notes", [])
     task.status = "completed"
+
+    # Persist review artifact
+    if review_artifact:
+        task.review_report_json = review_artifact
+        task.evidence_matrix_json = review_artifact.get("evidence_matrix", [])
+        task.interview_plan_json = review_artifact.get("interview_plan", [])
+        rec = review_artifact.get("recommendation_summary", {})
+        task.decision_summary = rec.get("reasoning", "")
 
     # Also update snapshot with parsed data if available
     jd_parsed = pipeline_result.get("jd_parsed") or {}
@@ -225,6 +234,7 @@ async def tailor_jd(
 
     return JDTailorResponse(
         resume=resume_content,
+        review_artifact=review_artifact,
         ability_match_score=task.ability_match_score,
         resume_match_score=task.resume_match_score,
         readiness_score=task.readiness_score,
