@@ -106,3 +106,81 @@ async def get_recent_jd_decisions(
         }
         for t in tasks
     ]
+
+
+async def get_role_summaries(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+) -> list[dict]:
+    """Get summary data for each active/paused role for dashboard cards."""
+    stmt = (
+        select(TargetRole)
+        .where(
+            TargetRole.user_id == user_id,
+            TargetRole.deleted_at.is_(None),
+            TargetRole.status.in_(["active", "paused"]),
+        )
+        .order_by(TargetRole.priority.desc())
+    )
+    result = await session.execute(stmt)
+    roles = result.scalars().all()
+
+    summaries = []
+    for role in roles:
+        resume = await session.scalar(
+            select(Resume).where(
+                Resume.target_role_id == role.id,
+                Resume.deleted_at.is_(None),
+            )
+        )
+        gap_count = await session.scalar(
+            select(func.count(GapItem.id)).where(
+                GapItem.target_role_id == role.id,
+                GapItem.status.in_(["open", "in_progress"]),
+            )
+        ) or 0
+
+        summaries.append({
+            "id": str(role.id),
+            "role_name": role.role_name,
+            "role_type": role.role_type,
+            "status": role.status,
+            "priority": role.priority,
+            "completeness_score": resume.completeness_score if resume else 0,
+            "match_score": resume.match_score if resume else 0,
+            "gap_count": gap_count,
+            "updated_at": role.updated_at.isoformat() if role.updated_at else None,
+        })
+    return summaries
+
+
+async def get_high_priority_gaps(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    limit: int = 5,
+) -> list[dict]:
+    """Get top high-priority open gaps with suggested actions."""
+    stmt = (
+        select(GapItem)
+        .where(
+            GapItem.user_id == user_id,
+            GapItem.status.in_(["open", "in_progress"]),
+        )
+        .order_by(GapItem.priority.desc())
+        .limit(limit)
+    )
+    result = await session.execute(stmt)
+    gaps = result.scalars().all()
+
+    return [
+        {
+            "id": str(g.id),
+            "skill_name": g.skill_name,
+            "gap_type": g.gap_type,
+            "priority": g.priority,
+            "status": g.status,
+            "progress": g.progress,
+            "target_role_id": str(g.target_role_id),
+        }
+        for g in gaps
+    ]

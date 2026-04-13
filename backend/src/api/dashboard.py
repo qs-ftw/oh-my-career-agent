@@ -34,3 +34,27 @@ async def get_recent_jd_decisions(
     """Return the most recent JD tailoring decisions."""
     user_id = await get_current_user_id()
     return await dashboard_service.get_recent_jd_decisions(db, user_id)
+
+
+@router.get(
+    "/role-summaries",
+    summary="Get role overview cards",
+)
+async def get_role_summaries(
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    """Return role summary cards with resume scores and gap counts."""
+    user_id = await get_current_user_id()
+    return await dashboard_service.get_role_summaries(db, user_id)
+
+
+@router.get(
+    "/high-priority-gaps",
+    summary="Get high-priority gaps",
+)
+async def get_high_priority_gaps(
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    """Return top high-priority open gaps."""
+    user_id = await get_current_user_id()
+    return await dashboard_service.get_high_priority_gaps(db, user_id)
