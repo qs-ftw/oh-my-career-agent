@@ -2,7 +2,14 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { useRoles, useCreateRole, useDeleteRole } from "@/hooks/useRoles";
+import {
+  useRoles,
+  useCreateRole,
+  useDeleteRole,
+  useUpdateRole,
+  usePauseRole,
+  useRole,
+} from "@/hooks/useRoles";
 import {
   Plus,
   Trash2,
@@ -11,6 +18,10 @@ import {
   Briefcase,
   X,
   AlertTriangle,
+  Pause,
+  Play,
+  Pencil,
+  Save,
 } from "lucide-react";
 import type { RoleCreateRequest } from "@/types";
 
@@ -28,11 +39,17 @@ export function Roles() {
   const { data, isLoading, isError } = useRoles();
   const createRole = useCreateRole();
   const deleteRole = useDeleteRole();
+  const pauseRole = usePauseRole();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [editRoleId, setEditRoleId] = useState<string | null>(null);
 
   const roles = data?.items ?? [];
+
+  const handlePause = (role: { id: string; status: string }) => {
+    pauseRole.mutate({ id: role.id, pause: role.status === "active" });
+  };
 
   return (
     <>
@@ -90,6 +107,8 @@ export function Roles() {
                   role={role}
                   onView={() => navigate(`/roles/${role.id}`)}
                   onDelete={() => setDeleteConfirmId(role.id)}
+                  onEdit={() => setEditRoleId(role.id)}
+                  onPause={() => handlePause(role)}
                 />
               ))}
             </div>
@@ -108,6 +127,14 @@ export function Roles() {
               });
             }}
             isSubmitting={createRole.isPending}
+          />
+        )}
+
+        {/* Edit Modal */}
+        {editRoleId && (
+          <EditRoleInlineModal
+            roleId={editRoleId}
+            onClose={() => setEditRoleId(null)}
           />
         )}
 
@@ -155,6 +182,8 @@ function RoleCard({
   role,
   onView,
   onDelete,
+  onEdit,
+  onPause,
 }: {
   role: {
     id: string;
@@ -166,6 +195,8 @@ function RoleCard({
   };
   onView: () => void;
   onDelete: () => void;
+  onEdit: () => void;
+  onPause: () => void;
 }) {
   const statusColor =
     role.status === "active"
@@ -231,6 +262,23 @@ function RoleCard({
       {/* Actions */}
       <div className="mt-4 flex items-center justify-end gap-2 border-t pt-3">
         <button
+          onClick={onEdit}
+          className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          编辑
+        </button>
+        <button
+          onClick={onPause}
+          className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
+        >
+          {role.status === "active" ? (
+            <><Pause className="h-3.5 w-3.5" /> 暂停</>
+          ) : (
+            <><Play className="h-3.5 w-3.5" /> 恢复</>
+          )}
+        </button>
+        <button
           onClick={onDelete}
           className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
         >
@@ -244,6 +292,196 @@ function RoleCard({
           <Eye className="h-3.5 w-3.5" />
           查看详情
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ── EditRoleInlineModal ────────────────────────────────
+
+function EditRoleInlineModal({
+  roleId,
+  onClose,
+}: {
+  roleId: string;
+  onClose: () => void;
+}) {
+  const { data: role, isLoading } = useRole(roleId);
+  const updateRole = useUpdateRole();
+  const [form, setForm] = useState<RoleCreateRequest>({
+    role_name: "",
+    role_type: ROLE_TYPES[0],
+    description: "",
+    required_skills: [],
+    bonus_skills: [],
+    keywords: [],
+    priority: 5,
+  });
+  const [skillsInput, setSkillsInput] = useState("");
+  const [keywordsInput, setKeywordsInput] = useState("");
+  const [initialized, setInitialized] = useState(false);
+
+  // Sync form when role data loads
+  if (role && !initialized) {
+    setForm({
+      role_name: role.role_name,
+      role_type: role.role_type,
+      description: role.description,
+      required_skills: role.required_skills,
+      bonus_skills: role.bonus_skills,
+      keywords: role.keywords,
+      priority: role.priority,
+    });
+    setSkillsInput(role.required_skills.join(", "));
+    setKeywordsInput(role.keywords.join(", "));
+    setInitialized(true);
+  }
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    updateRole.mutate(
+      {
+        id: roleId,
+        data: {
+          ...form,
+          required_skills: skillsInput
+            ? skillsInput.split(",").map((s) => s.trim()).filter(Boolean)
+            : undefined,
+          keywords: keywordsInput
+            ? keywordsInput.split(",").map((s) => s.trim()).filter(Boolean)
+            : undefined,
+        },
+      },
+      { onSuccess: onClose }
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <Loader2 className="h-6 w-6 animate-spin text-white" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-lg rounded-lg bg-card p-6 shadow-xl">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">编辑岗位</h3>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 hover:bg-muted transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium">岗位名称</label>
+            <input
+              type="text"
+              required
+              value={form.role_name}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, role_name: e.target.value }))
+              }
+              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">岗位类型</label>
+            <select
+              value={form.role_type}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, role_type: e.target.value }))
+              }
+              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              {ROLE_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">岗位描述</label>
+            <textarea
+              value={form.description ?? ""}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
+              rows={3}
+              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">核心技能</label>
+            <input
+              type="text"
+              value={skillsInput}
+              onChange={(e) => setSkillsInput(e.target.value)}
+              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+              placeholder="用逗号分隔"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">关键词</label>
+            <input
+              type="text"
+              value={keywordsInput}
+              onChange={(e) => setKeywordsInput(e.target.value)}
+              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+              placeholder="用逗号分隔"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">
+              优先级: <span className="text-primary font-bold">{form.priority ?? 5}</span>
+            </label>
+            <input
+              type="range"
+              min={0}
+              max={10}
+              step={1}
+              value={form.priority ?? 5}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, priority: Number(e.target.value) }))
+              }
+              className="mt-1 w-full accent-primary"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>0 - 低</span>
+              <span>10 - 高</span>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              disabled={updateRole.isPending}
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            >
+              {updateRole.isPending && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              )}
+              <Save className="h-3.5 w-3.5" />
+              保存
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

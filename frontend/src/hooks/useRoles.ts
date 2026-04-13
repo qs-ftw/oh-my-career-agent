@@ -67,6 +67,19 @@ export function useDeleteRole() {
   });
 }
 
+export function usePauseRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, pause }: { id: string; pause: boolean }) => {
+      const { data } = await roleApi.update(id, { status: pause ? "paused" : "active" });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
+  });
+}
+
 export function useInitRoleAssets() {
   const queryClient = useQueryClient();
   return useMutation({
