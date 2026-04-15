@@ -32,14 +32,19 @@ Return ONLY the JSON object, no other text.
 async def achievement_analysis(state: CareerAgentState) -> dict:
     """Parse raw achievement text into a structured achievement object.
 
-    Uses LLM if available, otherwise falls back to basic extraction.
+    Error handling strategy:
+    - LLM timeout/network errors → propagate (not recoverable)
+    - JSON parse errors → fallback to basic keyword extraction (recoverable)
     """
     achievement_raw = state.get("achievement_raw", "")
 
     user_prompt = f"Analyze this achievement:\n\n{achievement_raw}"
 
+    logs = list(state.get("agent_logs", []))
+
     # Try LLM-based analysis
     parsed = None
+    llm_error = None
     try:
         from src.core.llm import get_llm
 
@@ -56,12 +61,22 @@ async def achievement_analysis(state: CareerAgentState) -> dict:
         elif "```" in content:
             content = content.split("```")[1].split("```")[0]
         parsed = json.loads(content.strip())
+    except json.JSONDecodeError as e:
+        # Recoverable: LLM returned non-JSON, use fallback
+        logger.warning(f"LLM returned non-JSON for achievement analysis: {e}")
+        logs.append({
+            "node": "achievement_analysis",
+            "level": "warning",
+            "message": f"LLM response was not valid JSON, using fallback: {e}",
+        })
     except Exception as e:
-        logger.info(f"LLM achievement analysis failed ({e}), using template fallback")
+        # Severe: timeout, network error, API error — must propagate
+        error_type = type(e).__name__
+        logger.error(f"LLM achievement analysis failed ({error_type}): {e}")
+        llm_error = f"{error_type}: {e}"
 
-    # Fallback: basic extraction
+    # Fallback: basic keyword extraction (only for recoverable errors)
     if not parsed:
-        # Extract tags from common keywords
         raw_lower = achievement_raw.lower()
         common_techs = [
             "python", "javascript", "typescript", "react", "vue", "go", "rust", "java",
@@ -82,14 +97,22 @@ async def achievement_analysis(state: CareerAgentState) -> dict:
             "importance_score": 0.5,
         }
 
-    return {
+    result_logs = logs + [
+        {
+            "node": "achievement_analysis",
+            "action": "parsed_achievement",
+            "tags_count": len(parsed.get("tags", [])),
+            "metrics_count": len(parsed.get("metrics", [])),
+        }
+    ]
+
+    result = {
         "achievement_parsed": parsed,
-        "agent_logs": state.get("agent_logs", []) + [
-            {
-                "node": "achievement_analysis",
-                "action": "parsed_achievement",
-                "tags_count": len(parsed.get("tags", [])),
-                "metrics_count": len(parsed.get("metrics", [])),
-            }
-        ],
+        "agent_logs": result_logs,
     }
+
+    # Propagate LLM errors so the service layer can decide what to do
+    if llm_error:
+        result["pipeline_error"] = llm_error
+
+    return result

@@ -15,8 +15,9 @@ class SuggestionResponse(BaseModel):
     suggestion_type: str
     target_role_id: UUID | None = None
     resume_id: UUID | None = None
+    source_achievement_id: UUID | None = None
     title: str
-    content: str = ""
+    content: dict[str, Any] | str | None = None
     impact_score: float = 0.0
     risk_level: str = "low"
     status: str = "pending"

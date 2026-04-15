@@ -1,4 +1,4 @@
-import { useState, type FormEvent, useMemo } from "react";
+import { useState, useMemo, useCallback, type FormEvent } from "react";
 import { Header } from "@/components/layout/Header";
 import { PageContainer } from "@/components/layout/PageContainer";
 import {
@@ -6,6 +6,11 @@ import {
   useCreateAchievement,
   useAnalyzeAchievement,
 } from "@/hooks/useAchievements";
+import {
+  useSuggestions,
+  useAcceptSuggestion,
+  useRejectSuggestion,
+} from "@/hooks/useSuggestions";
 import {
   Plus,
   Tag,
@@ -15,8 +20,13 @@ import {
   AlertTriangle,
   FileText,
   X,
+  CheckCircle2,
+  Clock,
+  CircleDot,
+  Layers,
+  AlertCircle,
 } from "lucide-react";
-import type { Achievement, AchievementCreateRequest } from "@/types";
+import type { Achievement, AchievementCreateRequest, UpdateSuggestion } from "@/types";
 
 const SOURCE_TYPE_LABELS: Record<string, string> = {
   manual: "手动录入",
@@ -33,38 +43,115 @@ export function Achievements() {
   const createAchievement = useCreateAchievement();
   const analyzeAchievement = useAnalyzeAchievement();
 
+  // Fetch pending suggestions to determine which achievements have pending suggestions
+  const { data: pendingSuggestions } = useSuggestions({ status: "pending" });
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [filterTag, setFilterTag] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "unanalyzed" | "pending" | "done">("all");
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  const handleAnalyze = useCallback(
+    (id: string) => {
+      setAnalysisError(null);
+      analyzeAchievement.mutate(id, {
+        onSuccess: (result) => {
+          if (result?.analysis_error) {
+            setAnalysisError(`分析部分失败: ${result.analysis_error}`);
+          }
+        },
+        onError: (err: Error) => {
+          setAnalysisError(`分析失败: ${err.message || "请稍后重试"}`);
+        },
+      });
+    },
+    [analyzeAchievement]
+  );
 
   const achievements = data ?? [];
   const selectedAchievement = selectedId
     ? achievements.find((a) => a.id === selectedId) ?? null
     : null;
 
-  // Collect all unique tags for filter chips
-  const allTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    achievements.forEach((a) => a.tags.forEach((t) => tagSet.add(t)));
-    return Array.from(tagSet).sort();
-  }, [achievements]);
+  // Build a Set of achievement IDs that have pending suggestions
+  const pendingAchievementIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (pendingSuggestions) {
+      for (const s of pendingSuggestions) {
+        if (s.source_achievement_id) {
+          ids.add(s.source_achievement_id);
+        }
+      }
+    }
+    return ids;
+  }, [pendingSuggestions]);
 
-  // Filter achievements by selected tag
+  // Tab counts
+  const tabCounts = useMemo(() => {
+    const unanalyzed = achievements.filter((a) => !a.parsed_summary).length;
+    const pending = achievements.filter(
+      (a) => a.parsed_summary && pendingAchievementIds.has(a.id)
+    ).length;
+    const done = achievements.filter(
+      (a) => a.parsed_summary && !pendingAchievementIds.has(a.id)
+    ).length;
+    return { all: achievements.length, unanalyzed, pending, done };
+  }, [achievements, pendingAchievementIds]);
+
+  // Filter achievements by active tab
   const filteredAchievements = useMemo(() => {
-    if (!filterTag) return achievements;
-    return achievements.filter((a) => a.tags.includes(filterTag));
-  }, [achievements, filterTag]);
+    switch (activeTab) {
+      case "unanalyzed":
+        return achievements.filter((a) => !a.parsed_summary);
+      case "pending":
+        return achievements.filter(
+          (a) => a.parsed_summary && pendingAchievementIds.has(a.id)
+        );
+      case "done":
+        return achievements.filter(
+          (a) => a.parsed_summary && !pendingAchievementIds.has(a.id)
+        );
+      default:
+        return achievements;
+    }
+  }, [achievements, activeTab, pendingAchievementIds]);
+
+  const tabs = [
+    { key: "all" as const, label: "全部", icon: Layers },
+    { key: "unanalyzed" as const, label: "未分析", icon: CircleDot },
+    { key: "pending" as const, label: "待处理", icon: Clock },
+    { key: "done" as const, label: "已完成", icon: CheckCircle2 },
+  ];
 
   return (
     <>
       <Header title="成果中心" description="管理所有沉淀下来的成果资产" />
-      <PageContainer>
-        {/* Toolbar */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">标签筛选</span>
+      {/* Sticky toolbar */}
+      <div className="sticky top-0 z-10 bg-card border-b">
+        <PageContainer>
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center gap-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    activeTab === tab.key
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <tab.icon className="h-3.5 w-3.5" />
+                  {tab.label}
+                  <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-xs ${
+                    activeTab === tab.key
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}>
+                    {tabCounts[tab.key]}
+                  </span>
+                </button>
+              ))}
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
@@ -74,37 +161,9 @@ export function Achievements() {
               新增成果
             </button>
           </div>
-
-          {/* Tag filter chips */}
-          {allTags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setFilterTag(null)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  filterTag === null
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
-                全部
-              </button>
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => setFilterTag(filterTag === tag ? null : tag)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    filterTag === tag
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
+        </PageContainer>
+      </div>
+      <PageContainer>
         {/* Content */}
         <div className="mt-4">
           {isLoading && (
@@ -125,11 +184,11 @@ export function Achievements() {
             <div className="rounded-lg border bg-card p-8 text-center">
               <FileText className="mx-auto h-12 w-12 text-muted-foreground/50" />
               <p className="mt-4 text-muted-foreground">
-                {filterTag
-                  ? `没有带「${filterTag}」标签的成果`
+                {activeTab !== "all"
+                  ? `没有${tabs.find((t) => t.key === activeTab)?.label ?? ""}的成果`
                   : "暂无成果记录"}
               </p>
-              {!filterTag && (
+              {activeTab === "all" && (
                 <p className="mt-1 text-sm text-muted-foreground">
                   点击「新增成果」开始录入你的工作成果。
                 </p>
@@ -139,13 +198,24 @@ export function Achievements() {
 
           {!isLoading && !isError && filteredAchievements.length > 0 && (
             <div className="space-y-4">
+              {/* Analysis error toast */}
+              {analysisError && (
+                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                  <span className="text-sm text-red-700">{analysisError}</span>
+                  <button
+                    onClick={() => setAnalysisError(null)}
+                    className="ml-auto shrink-0 rounded p-0.5 hover:bg-red-100"
+                  >
+                    <X className="h-3.5 w-3.5 text-red-500" />
+                  </button>
+                </div>
+              )}
               {filteredAchievements.map((achievement) => (
                 <AchievementCard
                   key={achievement.id}
                   achievement={achievement}
-                  onAnalyze={() =>
-                    analyzeAchievement.mutate(achievement.id)
-                  }
+                  onAnalyze={() => handleAnalyze(achievement.id)}
                   isAnalyzing={
                     analyzeAchievement.isPending &&
                     analyzeAchievement.variables === achievement.id
@@ -177,13 +247,12 @@ export function Achievements() {
           <DetailDrawer
             achievement={selectedAchievement}
             onClose={() => setSelectedId(null)}
-            onAnalyze={() =>
-              analyzeAchievement.mutate(selectedAchievement.id)
-            }
+            onAnalyze={() => handleAnalyze(selectedAchievement.id)}
             isAnalyzing={
               analyzeAchievement.isPending &&
               analyzeAchievement.variables === selectedAchievement.id
             }
+            analysisError={analysisError}
           />
         )}
       </PageContainer>
@@ -273,18 +342,20 @@ function AchievementCard({
 
           {/* Actions */}
           <div className="mt-4 flex items-center justify-end gap-2 border-t pt-3">
-            <button
-              onClick={onAnalyze}
-              disabled={isAnalyzing}
-              className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
-            >
-              {isAnalyzing ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="h-3.5 w-3.5" />
-              )}
-              分析
-            </button>
+            {!hasParsed && (
+              <button
+                onClick={onAnalyze}
+                disabled={isAnalyzing}
+                className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+              >
+                {isAnalyzing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
+                分析
+              </button>
+            )}
             <button
               onClick={onViewDetail}
               className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -432,6 +503,96 @@ function CreateAchievementModal({
   );
 }
 
+// ── SuggestionCard ─────────────────────────────────────
+
+const SUGGESTION_TYPE_LABELS: Record<string, string> = {
+  resume_update: "简历更新",
+  gap_update: "Gap 更新",
+  jd_tune: "JD 调整",
+};
+
+const RISK_COLORS: Record<string, string> = {
+  low: "bg-green-100 text-green-700",
+  medium: "bg-yellow-100 text-yellow-700",
+  high: "bg-red-100 text-red-700",
+};
+
+const SUGGESTION_STATUS_STYLES: Record<string, { label: string; color: string }> = {
+  pending: { label: "待处理", color: "bg-yellow-100 text-yellow-700" },
+  accepted: { label: "已采纳", color: "bg-green-100 text-green-700" },
+  applied: { label: "已应用", color: "bg-green-100 text-green-700" },
+  rejected: { label: "已拒绝", color: "bg-gray-100 text-gray-500" },
+};
+
+function SuggestionCard({
+  suggestion,
+  onAccept,
+  onReject,
+  isAccepting,
+  isRejecting,
+}: {
+  suggestion: UpdateSuggestion;
+  onAccept: (id: string) => void;
+  onReject: (id: string) => void;
+  isAccepting: boolean;
+  isRejecting: boolean;
+}) {
+  const statusInfo = SUGGESTION_STATUS_STYLES[suggestion.status] ?? {
+    label: suggestion.status,
+    color: "bg-gray-100 text-gray-500",
+  };
+  const isPending = suggestion.status === "pending";
+
+  return (
+    <div className="rounded-md border p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground truncate">
+              {suggestion.title}
+            </span>
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-700">
+              {SUGGESTION_TYPE_LABELS[suggestion.suggestion_type] ?? suggestion.suggestion_type}
+            </span>
+            <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${RISK_COLORS[suggestion.risk_level] ?? RISK_COLORS.low}`}>
+              {suggestion.risk_level === "low" ? "低风险" : suggestion.risk_level === "medium" ? "中风险" : "高风险"}
+            </span>
+            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-muted text-muted-foreground">
+              影响度 {suggestion.impact_score.toFixed(1)}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isPending ? (
+            <>
+              <button
+                onClick={() => onReject(suggestion.id)}
+                disabled={isRejecting}
+                className="rounded-md border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+              >
+                {isRejecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "拒绝"}
+              </button>
+              <button
+                onClick={() => onAccept(suggestion.id)}
+                disabled={isAccepting}
+                className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {isAccepting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "采纳"}
+              </button>
+            </>
+          ) : (
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusInfo.color}`}>
+              {statusInfo.label}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── DetailDrawer (slide-in panel) ──────────────────────
 
 function DetailDrawer({
@@ -439,13 +600,25 @@ function DetailDrawer({
   onClose,
   onAnalyze,
   isAnalyzing,
+  analysisError,
 }: {
   achievement: Achievement;
   onClose: () => void;
   onAnalyze: () => void;
   isAnalyzing: boolean;
+  analysisError?: string | null;
 }) {
   const hasParsed = !!achievement.parsed_summary;
+
+  // Fetch suggestions for this achievement
+  const { data: suggestions } = useSuggestions({
+    achievement_id: achievement.id,
+  });
+
+  const acceptSuggestion = useAcceptSuggestion();
+  const rejectSuggestion = useRejectSuggestion();
+
+  const pendingCount = suggestions?.filter((s) => s.status === "pending").length ?? 0;
 
   return (
     <>
@@ -595,6 +768,31 @@ function DetailDrawer({
                   </ul>
                 </section>
               )}
+
+              {/* Update Suggestions */}
+              {suggestions && suggestions.length > 0 && (
+                <section>
+                  <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    更新建议
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      {suggestions.length}
+                      {pendingCount > 0 && ` (${pendingCount} 待处理)`}
+                    </span>
+                  </h4>
+                  <div className="mt-3 space-y-2">
+                    {suggestions.map((sug) => (
+                      <SuggestionCard
+                        key={sug.id}
+                        suggestion={sug}
+                        onAccept={(id) => acceptSuggestion.mutate(id)}
+                        onReject={(id) => rejectSuggestion.mutate(id)}
+                        isAccepting={acceptSuggestion.isPending && acceptSuggestion.variables === sug.id}
+                        isRejecting={rejectSuggestion.isPending && rejectSuggestion.variables === sug.id}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
             </>
           )}
 
@@ -605,6 +803,12 @@ function DetailDrawer({
               <p className="mt-3 text-sm text-muted-foreground">
                 该成果尚未分析
               </p>
+              {analysisError && (
+                <div className="mt-3 flex items-center justify-center gap-2 text-sm text-red-600">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{analysisError}</span>
+                </div>
+              )}
               <button
                 onClick={onAnalyze}
                 disabled={isAnalyzing}

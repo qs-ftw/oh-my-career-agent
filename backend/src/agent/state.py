@@ -68,3 +68,4 @@ class CareerAgentState(TypedDict, total=False):
     # Audit trail
     # ------------------------------------------------------------------
     agent_logs: list[dict[str, Any]]
+    pipeline_error: str | None  # Set by nodes on severe (non-recoverable) errors

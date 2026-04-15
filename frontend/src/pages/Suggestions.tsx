@@ -25,9 +25,10 @@ interface UpdateSuggestion {
   suggestion_type: "resume_update" | "gap_update" | "jd_tune";
   target_role_id: string;
   resume_id?: string;
+  source_achievement_id?: string;
   title: string;
   content: Record<string, unknown>;
-  impact_score: Record<string, unknown>;
+  impact_score: number;
   risk_level: "low" | "medium" | "high";
   status: "pending" | "accepted" | "rejected" | "applied";
   created_at: string;
@@ -98,12 +99,9 @@ function extractContentPreview(content: Record<string, unknown>): string {
   return json.length > 200 ? json.slice(0, 200) + "..." : json;
 }
 
-function formatImpactScore(score: Record<string, unknown>): string {
+function formatImpactScore(score: number): string {
   if (score == null) return "-";
-  if (typeof score === "number") return `${Math.round(score)}%`;
-  if (typeof score.overall === "number") return `${Math.round(score.overall as number)}%`;
-  if (typeof score.value === "number") return `${Math.round(score.value as number)}%`;
-  return JSON.stringify(score);
+  return `${Math.round(score)}%`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -343,7 +341,7 @@ export function Suggestions() {
         {/* Card list */}
         {!isLoading && !isError && suggestions.length > 0 && (
           <div className="flex flex-col gap-4">
-            {(suggestions as UpdateSuggestion[]).map((s) => (
+            {suggestions.map((s) => (
               <SuggestionCard
                 key={s.id}
                 suggestion={s}

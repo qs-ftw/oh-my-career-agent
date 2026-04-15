@@ -269,7 +269,7 @@ function RoleCard({
     role.status === "active" ? "进行中" : role.status === "paused" ? "已暂停" : "已删除";
 
   return (
-    <div className="group rounded-lg border bg-card p-5 hover:shadow-md transition-shadow">
+    <div className="group flex flex-col rounded-lg border bg-card p-5 hover:shadow-md transition-shadow">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
@@ -301,8 +301,9 @@ function RoleCard({
       </div>
 
       {/* Skills */}
+      <div className="mt-3 flex-1">
       {role.required_skills.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {role.required_skills.slice(0, 5).map((skill) => (
             <span
               key={skill}
@@ -318,6 +319,7 @@ function RoleCard({
           )}
         </div>
       )}
+      </div>
 
       {/* Actions */}
       <div className="mt-4 flex items-center justify-end gap-2 border-t pt-3">

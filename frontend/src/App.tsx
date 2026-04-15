@@ -8,7 +8,6 @@ import { ResumeDetail } from "@/pages/ResumeDetail";
 import { Achievements } from "@/pages/Achievements";
 import { GapBoard } from "@/pages/GapBoard";
 import { Resumes } from "@/pages/Resumes";
-import { Suggestions } from "@/pages/Suggestions";
 import { Profile } from "@/pages/Profile";
 import { StoryBank } from "@/pages/StoryBank";
 
@@ -36,7 +35,6 @@ export default function App() {
               <Route path="/resumes/:id" element={<ResumeDetail />} />
               <Route path="/achievements" element={<Achievements />} />
               <Route path="/gaps" element={<GapBoard />} />
-              <Route path="/suggestions" element={<Suggestions />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/stories" element={<StoryBank />} />
             </Routes>

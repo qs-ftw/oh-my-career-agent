@@ -32,6 +32,7 @@ class AchievementResponse(BaseModel):
     interview_points: list[dict[str, Any]] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     importance_score: float = 0.0
+    analysis_error: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

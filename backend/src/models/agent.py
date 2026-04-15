@@ -60,6 +60,9 @@ class UpdateSuggestion(IDMixin, TimestampMixin, Base):
     source_ref_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True, default=None
     )
+    source_achievement_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("achievements.id"), nullable=True, default=None,
+    )
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     content_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     impact_score_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)

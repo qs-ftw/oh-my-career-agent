@@ -21,6 +21,9 @@ export function useAcceptSuggestion() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suggestions"] });
+      queryClient.invalidateQueries({ queryKey: ["resumes"] });
+      queryClient.invalidateQueries({ queryKey: ["gaps"] });
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
     },
   });
 }

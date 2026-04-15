@@ -150,6 +150,7 @@ def get_llm(agent_name: str):
             "model": model_id,
             "temperature": temperature,
             "api_key": api_key or None,
+            "max_retries": model_cfg.get("max_retries", 2),
         }
         if model_cfg.get("base_url"):
             kwargs["base_url"] = model_cfg["base_url"]
@@ -162,6 +163,7 @@ def get_llm(agent_name: str):
             model=model_id,
             temperature=temperature,
             api_key=api_key or None,
+            max_retries=model_cfg.get("max_retries", 2),
         )
 
     raise ValueError(

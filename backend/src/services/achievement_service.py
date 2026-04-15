@@ -20,7 +20,7 @@ from src.schemas.achievement import AchievementCreate, AchievementResponse
 logger = logging.getLogger(__name__)
 
 
-def _to_response(a: Achievement) -> AchievementResponse:
+def _to_response(a: Achievement, analysis_error: str | None = None) -> AchievementResponse:
     """Convert an Achievement ORM instance to an AchievementResponse schema."""
     return AchievementResponse(
         id=a.id,
@@ -45,6 +45,7 @@ def _to_response(a: Achievement) -> AchievementResponse:
         ),
         tags=a.tags_json if isinstance(a.tags_json, list) else [],
         importance_score=a.importance_score,
+        analysis_error=analysis_error,
         created_at=a.created_at,
     )
 
@@ -231,16 +232,26 @@ async def run_achievement_pipeline(
         "agent_logs": [],
     }
 
+    pipeline_error: str | None = None
+
     try:
         pipeline_result = await achievement_graph.ainvoke(agent_input)
+        # Check for severe errors propagated from nodes
+        pipeline_error = pipeline_result.get("pipeline_error")
+        if pipeline_error:
+            logger.error(
+                f"Achievement pipeline for {achievement_id} completed with errors: {pipeline_error}"
+            )
     except Exception as e:
-        logger.error(f"Achievement pipeline failed for {achievement_id}: {e}")
+        error_type = type(e).__name__
+        logger.error(f"Achievement pipeline crashed for {achievement_id}: {error_type}: {e}")
+        pipeline_error = f"Pipeline crashed: {error_type}: {e}"
         pipeline_result = {
             "achievement_parsed": None,
             "role_matches": [],
             "suggestions": [],
             "gap_updates": [],
-            "agent_logs": [{"node": "pipeline", "error": str(e)}],
+            "agent_logs": [{"node": "pipeline", "level": "error", "message": str(e)}],
         }
 
     # 4. Persist results
@@ -273,21 +284,56 @@ async def run_achievement_pipeline(
             logger.warning(f"Invalid role_id in match: {role_id}")
 
     # 4c. Create update suggestions
+    # Build a lookup: target_role_id → resume_id for auto-filling resume_id
+    role_resume_map: dict[uuid.UUID, uuid.UUID] = {}
+    for role_data in target_roles_data:
+        rid = role_data.get("role_id")
+        # Find resume for this role from the earlier query
+        if rid:
+            try:
+                role_uuid = uuid.UUID(rid)
+                resume_stmt = select(Resume).where(
+                    Resume.target_role_id == role_uuid,
+                    Resume.resume_type == "master",
+                    Resume.deleted_at.is_(None),
+                )
+                resume_result = await session.execute(resume_stmt)
+                resume = resume_result.scalar_one_or_none()
+                if resume:
+                    role_resume_map[role_uuid] = resume.id
+            except (ValueError, TypeError):
+                pass
+
     for suggestion in pipeline_result.get("suggestions", []):
+        try:
+            target_role_id_val = (
+                uuid.UUID(suggestion["target_role_id"])
+                if suggestion.get("target_role_id") else None
+            )
+        except (ValueError, TypeError, KeyError):
+            target_role_id_val = None
+
+        try:
+            resume_id_val = (
+                uuid.UUID(suggestion["resume_id"])
+                if suggestion.get("resume_id") else None
+            )
+        except (ValueError, TypeError, KeyError):
+            resume_id_val = None
+
+        # Auto-fill resume_id from role lookup if missing
+        if resume_id_val is None and target_role_id_val in role_resume_map:
+            resume_id_val = role_resume_map[target_role_id_val]
+
         sug = UpdateSuggestion(
             workspace_id=workspace_id,
             user_id=user_id,
             suggestion_type=suggestion.get("suggestion_type", "resume_update"),
-            target_role_id=(
-                uuid.UUID(suggestion["target_role_id"])
-                if suggestion.get("target_role_id") else None
-            ),
-            resume_id=(
-                uuid.UUID(suggestion["resume_id"])
-                if suggestion.get("resume_id") else None
-            ),
+            target_role_id=target_role_id_val,
+            resume_id=resume_id_val,
             source_type="achievement_pipeline",
             source_ref_id=achievement_id,
+            source_achievement_id=achievement_id,
             title=suggestion.get("title", "Update suggestion"),
             content_json=suggestion.get("content"),
             impact_score_json={"score": suggestion.get("impact_score", 0.5)},
@@ -369,12 +415,13 @@ async def run_achievement_pipeline(
             "role_matches": pipeline_result.get("role_matches", []),
             "suggestions_count": len(pipeline_result.get("suggestions", [])),
             "gap_updates_count": len(pipeline_result.get("gap_updates", [])),
+            "pipeline_error": pipeline_error,
         },
-        status="completed",
+        status="failed" if pipeline_error else "completed",
     )
     session.add(agent_run)
 
     achievement.updated_at = datetime.now(UTC)
     await session.flush()
     await session.refresh(achievement)
-    return _to_response(achievement)
+    return _to_response(achievement, analysis_error=pipeline_error)

@@ -30,15 +30,19 @@ async def list_suggestions(
     target_role_id: uuid.UUID | None = Query(
         default=None, description="Filter by target role"
     ),
+    achievement_id: uuid.UUID | None = Query(
+        default=None, description="Filter by source achievement"
+    ),
     db: AsyncSession = Depends(get_db),
 ) -> list[SuggestionResponse]:
-    """Return all suggestions, optionally filtered by type, status, or role."""
+    """Return all suggestions, optionally filtered by type, status, role, or achievement."""
     user_id = await get_current_user_id()
     return await suggestion_service.list_suggestions(
         db, user_id,
         suggestion_type=suggestion_type,
         status=status_filter,
         target_role_id=target_role_id,
+        achievement_id=achievement_id,
     )
 
 

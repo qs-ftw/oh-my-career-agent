@@ -91,6 +91,7 @@ export function useInitRoleAssets() {
       queryClient.invalidateQueries({ queryKey: ["roles", id] });
       queryClient.invalidateQueries({ queryKey: ["resumes"] });
       queryClient.invalidateQueries({ queryKey: ["resumes", "role", id] });
+      queryClient.invalidateQueries({ queryKey: ["gaps", "role", id] });
     },
   });
 }

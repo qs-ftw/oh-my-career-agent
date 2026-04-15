@@ -345,13 +345,7 @@ export function RoleDetail() {
                 <div className="text-center py-6">
                   <GitCompareArrows className="mx-auto h-10 w-10 text-muted-foreground/40" />
                   <p className="mt-2 text-sm text-muted-foreground">暂无 Gap 分析</p>
-                  <button
-                    onClick={() => initAssets.mutate(id ?? "")}
-                    disabled={initAssets.isPending}
-                    className="mt-3 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                  >
-                    {initAssets.isPending ? "分析中..." : "开始分析"}
-                  </button>
+                  <p className="mt-1 text-xs text-muted-foreground/70">生成简历后将自动分析技能差距</p>
                 </div>
               )}
             </div>

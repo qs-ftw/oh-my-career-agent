@@ -5,7 +5,6 @@ import {
   FileText,
   Trophy,
   BarChart3,
-  Bell,
   UserCircle,
   BookOpen,
 } from "lucide-react";
@@ -17,7 +16,6 @@ const navItems = [
   { to: "/resumes", label: "简历管理", icon: FileText },
   { to: "/achievements", label: "成果中心", icon: Trophy },
   { to: "/gaps", label: "Gap 看板", icon: BarChart3 },
-  { to: "/suggestions", label: "更新建议", icon: Bell },
   { to: "/profile", label: "候选人画像", icon: UserCircle },
   { to: "/stories", label: "故事库", icon: BookOpen },
 ];

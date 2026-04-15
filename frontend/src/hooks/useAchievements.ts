@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { achievementApi } from "@/lib/api";
-import type { Achievement, AchievementCreateRequest } from "@/types";
+import { achievementApi, suggestionApi } from "@/lib/api";
+import type { Achievement, AchievementCreateRequest, UpdateSuggestion } from "@/types";
 
 export function useAchievements() {
   return useQuery<Achievement[]>({
@@ -49,5 +49,16 @@ export function useAnalyzeAchievement() {
       queryClient.invalidateQueries({ queryKey: ["suggestions"] });
       queryClient.invalidateQueries({ queryKey: ["gaps"] });
     },
+  });
+}
+
+export function useSuggestionsForAchievement(achievementId: string | null) {
+  return useQuery<UpdateSuggestion[]>({
+    queryKey: ["suggestions", { achievement_id: achievementId }],
+    queryFn: async () => {
+      const { data } = await suggestionApi.list({ achievement_id: achievementId! });
+      return data;
+    },
+    enabled: !!achievementId,
   });
 }

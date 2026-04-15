@@ -152,6 +152,7 @@ export interface Achievement {
   interview_points?: string[];
   tags: string[];
   importance_score: number;
+  analysis_error?: string;
   created_at: string;
   updated_at: string;
 }
@@ -228,9 +229,10 @@ export interface UpdateSuggestion {
   suggestion_type: "resume_update" | "gap_update" | "jd_tune";
   target_role_id: string;
   resume_id?: string;
+  source_achievement_id?: string;
   title: string;
   content: Record<string, unknown>;
-  impact_score: Record<string, unknown>;
+  impact_score: number;
   risk_level: "low" | "medium" | "high";
   status: "pending" | "accepted" | "rejected" | "applied";
   applied_resume_version_id?: string;
