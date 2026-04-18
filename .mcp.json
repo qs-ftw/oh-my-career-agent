@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "careeragent": {
+      "command": "python",
+      "args": ["-m", "careeragent_mcp.server"]
+    }
+  }
+}

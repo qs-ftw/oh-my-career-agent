@@ -1,0 +1,11 @@
+{
+    "python_version": "3.11",
+    "dependencies": ["."],
+    "graphs": {
+        "achievement_pipeline": "./src/agent/graph.py:achievement_graph",
+        "role_init_pipeline": "./src/agent/graph.py:role_init_graph",
+        "jd_tailoring_pipeline": "./src/agent/graph.py:jd_tailoring_graph",
+        "graph": "./src/agent/graph.py:graph"
+    },
+    "env": ".env"
+}

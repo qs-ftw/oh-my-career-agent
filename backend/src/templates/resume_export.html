@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>{{ headline }} - Resume</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 11px; line-height: 1.5; color: #1a1a2e; background: #fff;
+    padding: 40px 48px;
+  }
+  .header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .header-bar { height: 2px; background: linear-gradient(to right, hsl(187,74%,32%), hsl(270,70%,45%)); border-radius: 1px; margin-bottom: 12px; }
+  .contact-row { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; font-size: 10.5px; color: #555; }
+  .contact-item { display: inline-flex; align-items: center; gap: 4px; }
+  .contact-item a { color: hsl(187,74%,32%); text-decoration: none; }
+  .section { margin-bottom: 14px; }
+  .section-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: hsl(187,74%,32%); border-bottom: 1px solid #e5e5e5; padding-bottom: 3px; margin-bottom: 8px; }
+  .summary-text { font-size: 11px; line-height: 1.6; color: #333; }
+  .skills-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .skill-tag { font-size: 10px; font-weight: 500; color: hsl(187,74%,28%); background: hsl(187,40%,95%); padding: 3px 10px; border-radius: 3px; border: 1px solid hsl(187,40%,88%); }
+  .job { margin-bottom: 12px; }
+  .job-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+  .job-company { font-size: 12px; font-weight: 600; color: hsl(270,70%,45%); }
+  .job-period { font-size: 10px; color: #777; }
+  .job-role { font-size: 11px; font-weight: 500; color: #444; margin-bottom: 4px; }
+  .job ul { padding-left: 16px; margin-top: 4px; }
+  .job li { font-size: 10.5px; line-height: 1.5; color: #333; margin-bottom: 2px; }
+  .project { margin-bottom: 10px; }
+  .project-title { font-size: 11px; font-weight: 600; color: hsl(270,70%,45%); }
+  .project-desc { font-size: 10.5px; color: #444; margin-top: 2px; }
+  .project-tech { font-size: 9.5px; color: #888; margin-top: 2px; }
+  .highlight-item { font-size: 10.5px; color: #333; margin-bottom: 3px; padding-left: 12px; position: relative; }
+  .highlight-item::before { content: "\2022"; position: absolute; left: 0; color: hsl(187,74%,32%); }
+  .metric-item { font-size: 10.5px; color: #333; margin-bottom: 3px; padding-left: 12px; position: relative; }
+  .metric-item::before { content: "\2022"; position: absolute; left: 0; color: hsl(270,70%,45%); }
+  .avoid-break { break-inside: avoid; }
+  @media print { body { padding: 20px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>{{ headline }}</h1>
+  <div class="header-bar"></div>
+  {% if contact and (contact.email or contact.phone or contact.linkedin_url or contact.portfolio_url or contact.location) %}
+  <div class="contact-row">
+    {% if contact.email %}<span class="contact-item">{{ contact.email }}</span>{% endif %}
+    {% if contact.phone %}<span class="contact-item">{{ contact.phone }}</span>{% endif %}
+    {% if contact.linkedin_url %}<span class="contact-item"><a href="{{ contact.linkedin_url }}">{{ contact.linkedin_url }}</a></span>{% endif %}
+    {% if contact.portfolio_url %}<span class="contact-item"><a href="{{ contact.portfolio_url }}">{{ contact.portfolio_url }}</a></span>{% endif %}
+    {% if contact.location %}<span class="contact-item">{{ contact.location }}</span>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if summary %}
+<div class="section">
+  <div class="section-title">Professional Summary</div>
+  <div class="summary-text">{{ summary }}</div>
+</div>
+{% endif %}
+
+{% if skills %}
+<div class="section">
+  <div class="section-title">Core Competencies</div>
+  <div class="skills-grid">
+    {% for skill in skills %}
+    <span class="skill-tag">{{ skill }}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if experiences %}
+<div class="section">
+  <div class="section-title">Work Experience</div>
+  {% for exp in experiences %}
+  <div class="job avoid-break">
+    <div class="job-header">
+      <span class="job-company">{{ exp.get('company', '') }}</span>
+      <span class="job-period">{{ exp.get('period', '') }}</span>
+    </div>
+    <div class="job-role">{{ exp.get('title', '') }}</div>
+    {% if exp.get('description') %}
+    <ul>
+      <li>{{ exp.get('description', '') }}</li>
+    </ul>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if projects %}
+<div class="section">
+  <div class="section-title">Projects</div>
+  {% for proj in projects %}
+  <div class="project avoid-break">
+    <div class="project-title">{{ proj.get('name', '') }}</div>
+    <div class="project-desc">{{ proj.get('description', '') }}</div>
+    {% if proj.get('tech_stack') %}
+    <div class="project-tech">{{ proj.get('tech_stack', []) | join(', ') }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if highlights %}
+<div class="section avoid-break">
+  <div class="section-title">Highlights</div>
+  {% for h in highlights %}
+  <div class="highlight-item">{{ h }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if metrics %}
+<div class="section avoid-break">
+  <div class="section-title">Key Metrics</div>
+  {% for m in metrics %}
+  <div class="metric-item">{{ m.get('description', m) if m is mapping else m }}{% if m is mapping and m.get('value') %}: {{ m.get('value') }}{% endif %}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+</body>
+</html>

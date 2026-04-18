@@ -1,0 +1,27 @@
+# CareerAgent LLM Configuration
+# API keys are referenced via ${ENV_VAR} syntax, resolved from .env / environment
+
+models:
+  glm-flash:
+    provider: openai_compatible
+    base_url: https://open.bigmodel.cn/api/paas/v4
+    api_key: ${GLM_API_KEY}
+    model: glm-4-flash
+    temperature: 0.3
+
+  claude-sonnet:
+    provider: anthropic
+    api_key: ${ANTHROPIC_API_KEY}
+    model: claude-sonnet-4-20250514
+    temperature: 0.3
+
+agents:
+  achievement_analysis: glm-flash
+  role_matching: glm-flash
+  resume_update: claude-sonnet
+  gap_evaluation: glm-flash
+  jd_parsing: glm-flash
+  jd_tailoring: claude-sonnet
+  resume_init: claude-sonnet
+  capability_modeling: glm-flash
+  explain: glm-flash
